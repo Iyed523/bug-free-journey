@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compteur de Buts - CDM 2026</title>
+    <style>
+        /* Un peu de style pour rendre ça propre */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 5px solid #d32f2f; /* Une petite touche de couleur */
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #555;
+        }
+
+        #goal-counter {
+            font-size: 80px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin: 20px 0;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        /* Petite animation quand le score change */
+        .pop {
+            transform: scale(1.2);
+            color: #d32f2f !important;
+        }
+
+        .status {
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Coupe du Monde 2026</h1>
+        <h2>Total des Buts Marqués</h2>
+        <div id="goal-counter">--</div>
+        <div class="status" id="status-text">Mise à jour en direct...</div>
+    </div>
+
+    <script>
+        // 1. Définition des variables
+        const counterElement = document.getElementById('goal-counter');
+        const statusElement = document.getElementById('status-text');
+        
+        // L'URL de ton futur backend Python (FastAPI) en local
+        const API_URL = 'http://localhost:8000/api/total-goals'; 
+        
+        // On garde en mémoire le dernier score pour savoir s'il faut animer
+        let currentGoals = null;
+
+        // 2. La fonction qui va chercher les données
+        async function fetchTotalGoals() {
+            try {
+                // Appel vers ton backend
+                const response = await fetch(API_URL);
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // On part du principe que ton backend renvoie un JSON de ce type : { "total_goals": 42 }
+                const newGoals = data.total_goals;
+
+                // Mise à jour de l'affichage si le score a changé
+                if (currentGoals !== newGoals) {
+                    counterElement.innerText = newGoals;
+                    
+                    // On lance l'animation "pop" si ce n'est pas le premier chargement
+                    if (currentGoals !== null) {
+                        counterElement.classList.add('pop');
+                        setTimeout(() => counterElement.classList.remove('pop'), 300);
+                    }
+                    currentGoals = newGoals;
+                }
+                
+                statusElement.innerText = `Dernière mise à jour : ${new Date().toLocaleTimeString()}`;
+
+            } catch (error) {
+                console.error("Impossible de récupérer les données :", error);
+                statusElement.innerText = "Erreur de connexion au serveur.";
+            }
+        }
+
+        // 3. Exécution
+        // On lance une première fois tout de suite au chargement de la page
+        fetchTotalGoals();
+
+        // Puis on automatise : la fonction se relance toutes les 60 secondes (60000 millisecondes)
+        setInterval(fetchTotalGoals, 60000);
+
+    </script>
+</body>
+</html>
